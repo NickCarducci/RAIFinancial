@@ -17,7 +17,7 @@ app.http('generalledger', {
         context.res = {
             status: 200,
             headers: {
-                'Content-Type': 'application/JSON'
+                'Content-Type': 'application/json'
             }, 
             body: {
                 success: true,
