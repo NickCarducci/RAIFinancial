@@ -36,24 +36,14 @@ const sqlInputPayoutLog = input.sql({
     connectionStringSetting: "SqlConnectionString"
 });//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
 
-app.http('generalledger', {
-    route: "generalledger",
+app.http('payoutlog', {
+    route: "payoutlog",
     methods: ['GET'],
     authLevel: 'anonymous',
     extraInputs: [sqlInputPayoutLog],
     handler: (request, context) => {
         context.log('HTTP trigger and SQL input binding function processed a request.');
         const payoutLog = context.extraInputs.get(sqlInputPayoutLog);
-        /*context.res = {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/json'
-            }, 
-            body: {
-                success: true,
-                generalLedger: {}
-            }
-        };*/
         return {
             jsonBody: {payoutLog},
         };
