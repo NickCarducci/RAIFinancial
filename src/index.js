@@ -9,7 +9,7 @@ const sqlInputGeneralLedger = input.sql({
 app.http('generalledger', {
     route: "generalledger",
     methods: ['GET'],
-    authLevel: 'function',
+    authLevel: 'anonymous',
     extraInputs: [sqlInputGeneralLedger],
     handler: (request, context) => {
         context.log('HTTP trigger and SQL input binding function processed a request.');
@@ -39,7 +39,7 @@ const sqlInputPayoutLog = input.sql({
 app.http('payoutlog', {
     route: "payoutlog",
     methods: ['GET'],
-    authLevel: 'function',
+    authLevel: 'anonymous',
     extraInputs: [sqlInputPayoutLog],
     handler: (request, context) => {
         context.log('HTTP trigger and SQL input binding function processed a request.');
