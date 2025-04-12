@@ -25,7 +25,7 @@ app.http('generalledger', {
             }
         };
         return {
-            generalLedger: true,
+            body: {generalLedger: true},
         };
     },
 });
