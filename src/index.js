@@ -14,7 +14,7 @@ app.http('generalledger', {
     handler: (request, context) => {
         context.log('HTTP trigger and SQL input binding function processed a request.');
         //const generalLedger = context.extraInputs.get(sqlInputGeneralLedger);
-        context.res = {
+        /*context.res = {
             status: 200,
             headers: {
                 'Content-Type': 'application/json'
@@ -23,9 +23,9 @@ app.http('generalledger', {
                 success: true,
                 generalLedger: {}
             }
-        };
+        };*/
         return {
-            body: {generalLedger: true},
+            jsonBody: {generalLedger: true},
         };
     },
 });
