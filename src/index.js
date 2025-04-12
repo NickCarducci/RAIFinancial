@@ -7,6 +7,7 @@ const sqlInputGeneralLedger = input.sql({
 });
 
 app.http('generalledger', {
+    route: "generalledger",
     methods: ['GET'],
     authLevel: 'anonymous',
     extraInputs: [sqlInputGeneralLedger],
