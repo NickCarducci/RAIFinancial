@@ -49,3 +49,43 @@ app.http('payoutlog', {
         };
     },
 });
+
+const sqlInputAccountBalances = input.sql({
+    commandText: 'select [AccountName], [CurrentBalance], [LastUpdated] from dbo.AccountBalances',
+    commandType: 'Text',
+    connectionStringSetting: "SqlConnectionString"
+});//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
+
+app.http('accountbalances', {
+    route: "accountbalances",
+    methods: ['GET'],
+    authLevel: 'anonymous',
+    extraInputs: [sqlInputAccountBalances],
+    handler: (request, context) => {
+        context.log('HTTP trigger and SQL input binding function processed a request.');
+        const accountBalances = context.extraInputs.get(sqlInputAccountBalances);
+        return {
+            jsonBody: {accountBalances},
+        };
+    },
+});
+
+const sqlInputIOStatement = input.sql({
+    commandText: 'SELECT [Month], [TotalRevenue], [TotalExpenses], [NetProfit] FROM dbo.IOStatement',
+    commandType: 'Text',
+    connectionStringSetting: "SqlConnectionString"
+});//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
+
+app.http('iostatement', {
+    route: "iostatement",
+    methods: ['GET'],
+    authLevel: 'anonymous',
+    extraInputs: [sqlInputIOStatement],
+    handler: (request, context) => {
+        context.log('HTTP trigger and SQL input binding function processed a request.');
+        const ioStatement = context.extraInputs.get(sqlInputIOStatement);
+        return {
+            jsonBody: {ioStatement},
+        };
+    },
+});
