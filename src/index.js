@@ -31,7 +31,7 @@ app.http('generalledger', {
 });
 
 const sqlInputPayoutLog = input.sql({
-    commandText: 'select [EmployeeName], [AmountPaid], [PaymentDate], [PaymentMethod], [Notes], [CreatedAt] from dbo.PayoutLog',
+    commandText: 'select [EmployeeName], [AmountPaid], [PaymentDate], [CreatedAt] from dbo.PayoutLog',
     commandType: 'Text',
     connectionStringSetting: "SqlConnectionString"
 });//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
