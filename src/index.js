@@ -93,7 +93,7 @@ app.http('iostatement', {
 const sqlOutputCategoryUpdate = output.sql({
     commandText: 'UPDATE dbo.GeneralLedger SET Category = @NewCategory WHERE TransactionID = @TransactionID',
     commandType: 'Text',
-    parameters: '@NewCategory=Query.newCategory,@TransactionID={Query.transactionId}',
+    parameters: '@NewCategory={Query.newCategory},@TransactionID={Query.transactionId}',
     connectionStringSetting: "SqlConnectionString"
 });//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
 
@@ -103,12 +103,12 @@ app.http('updatecategory', {
     authLevel: 'anonymous',
     extraOutputs: [sqlOutputCategoryUpdate],
     handler: async (request, context) => {
-        const body = await request.json();
+        //const body = await request.json();
         context.log('HTTP trigger and SQL input binding function processed a request.');
         context.extraOutputs.set(sqlOutputCategoryUpdate);
         return {
             status: 201,
-            jsonBody: body,
+            jsonBody: {},
         };
     },
 });
