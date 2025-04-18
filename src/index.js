@@ -25,7 +25,7 @@ app.http('generalledger', {
             }
         };*/
         return {
-            jsonBody: {generalLedger},
+            jsonBody: { generalLedger },
         };
     },
 });
@@ -45,7 +45,7 @@ app.http('payoutlog', {
         context.log('HTTP trigger and SQL input binding function processed a request.');
         const payoutLog = context.extraInputs.get(sqlInputPayoutLog);
         return {
-            jsonBody: {payoutLog},
+            jsonBody: { payoutLog },
         };
     },
 });
@@ -65,7 +65,7 @@ app.http('accountbalances', {
         context.log('HTTP trigger and SQL input binding function processed a request.');
         const accountBalances = context.extraInputs.get(sqlInputAccountBalances);
         return {
-            jsonBody: {accountBalances},
+            jsonBody: { accountBalances },
         };
     },
 });
@@ -85,7 +85,7 @@ app.http('iostatement', {
         context.log('HTTP trigger and SQL input binding function processed a request.');
         const ioStatement = context.extraInputs.get(sqlInputIOStatement);
         return {
-            jsonBody: {ioStatement},
+            jsonBody: { ioStatement },
         };
     },
 });
@@ -98,7 +98,7 @@ const sqlOutputCategoryUpdate = output.sql({
 });//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
 
 app.http('updatecategory', {
-    route: "updatecategory",
+    route: "updatecategory/{transactionId}/{newCategory}",
     methods: ['GET'],
     authLevel: 'anonymous',
     extraOutputs: [sqlOutputCategoryUpdate],
