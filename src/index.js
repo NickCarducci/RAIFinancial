@@ -89,17 +89,17 @@ app.http('iostatement', {
         };
     },
 });
-
+//https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-azure-sql-input?tabs=isolated-process%2Cnodejs-v4%2Cpython-v2&pivots=programming-language-javascript#http-trigger-get-row-by-id-from-query-string-3
 const sqlOutputCategoryUpdate = output.sql({
     commandText: 'UPDATE dbo.GeneralLedger SET Category = @NewCategory WHERE TransactionID = @TransactionID',
     commandType: 'Text',
-    parameters: '@NewCategory=Query.newCategory,@TransactionID={Query.id}',
+    parameters: '@NewCategory=Query.newCategory,@TransactionID={Query.transactionId}',
     connectionStringSetting: "SqlConnectionString"
 });//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
 
 app.http('updatecategory', {
     route: "updatecategory",
-    methods: ['POST'],
+    methods: ['GET'],
     authLevel: 'anonymous',
     extraOutputs: [sqlOutputCategoryUpdate],
     handler: async (request, context) => {
