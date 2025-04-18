@@ -1,7 +1,7 @@
-const { app, input } = require('@azure/functions');
+const { app, input, output } = require('@azure/functions');
 
 const sqlInputGeneralLedger = input.sql({
-    commandText: 'select [Date], [Description], [Amount], [Category], [Platform], [LinkedAccount], [CreatedAt] from dbo.GeneralLedger',
+    commandText: 'select [TransactionID], [Date], [Description], [Amount], [Category], [Platform], [LinkedAccount], [CreatedAt] from dbo.GeneralLedger',
     commandType: 'Text',
     connectionStringSetting: "SqlConnectionString"
 });//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
@@ -86,6 +86,29 @@ app.http('iostatement', {
         const ioStatement = context.extraInputs.get(sqlInputIOStatement);
         return {
             jsonBody: {ioStatement},
+        };
+    },
+});
+
+const sqlOutputCategoryUpdate = output.sql({
+    commandText: 'UPDATE dbo.GeneralLedger SET Category = @NewCategory WHERE TransactionID = @TransactionID',
+    commandType: 'Text',
+    parameters: '@NewCategory=Query.newCategory,@TransactionID={Query.id}',
+    connectionStringSetting: "SqlConnectionString"
+});//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
+
+app.http('updatecategory', {
+    route: "updatecategory",
+    methods: ['POST'],
+    authLevel: 'anonymous',
+    extraOutputs: [sqlOutputCategoryUpdate],
+    handler: async (request, context) => {
+        const body = await request.json();
+        context.log('HTTP trigger and SQL input binding function processed a request.');
+        context.extraOutputs.set(sqlOutputCategoryUpdate);
+        return {
+            status: 201,
+            jsonBody: body,
         };
     },
 });
