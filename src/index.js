@@ -93,7 +93,7 @@ app.http('iostatement', {
 const sqlOutputCategoryUpdate = output.sql({
     commandText: 'UPDATE dbo.GeneralLedger SET Category = @NewCategory WHERE TransactionID = @TransactionID',
     commandType: 'Text',
-    parameters: '@NewCategory={Query.newCategory},@TransactionID={Query.transactionId}',
+    parameters: '@NewCategory={newCategory},@TransactionID={transactionId}',
     connectionStringSetting: "SqlConnectionString"
 });//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
 
