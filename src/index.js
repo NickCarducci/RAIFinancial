@@ -130,7 +130,7 @@ app.http('expenses', {
 //https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-azure-sql-input?tabs=isolated-process%2Cnodejs-v4%2Cpython-v2&pivots=programming-language-javascript#http-trigger-get-row-by-id-from-query-string-3
 const sqlOutputCategoryUpdate = output.sql({
     type: 'sql',
-    commandText: 'UPDATE dbo.GeneralLedger SET Category = @NewCategory WHERE TransactionID = @TransactionID',
+    commandText: `UPDATE dbo.GeneralLedger SET Category = @NewCategory WHERE TransactionID = '@TransactionID'`,
     commandType: 'Text',
     parameters: '@NewCategory={newCategory},@TransactionID={transactionId}',
     connectionStringSetting: "SqlConnectionString"
