@@ -236,7 +236,7 @@ app.http('get_link_token', {
                     redirect_uri: body.referer
                 });
         } catch (e) {
-            error = getError(e)
+            error = {...getError(e), client_id: process.env.PLAID_CLIENT_ID }
         }
 
         return {
