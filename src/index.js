@@ -342,10 +342,15 @@ const fetchPlaidTransactions = async (context) => {
             if (cursorResult.recordset.length > 0)
                 cursor = cursorResult.recordset[0].CursorValue;
             while (hasMore) {
-                const sync = await client.transactionsSync({ access_token: AccessToken, cursor });
-                added = added.concat(sync.data.added);
-                cursor = sync.data.next_cursor;
-                hasMore = sync.data.has_more;
+                await client.transactionsSync({ access_token: AccessToken, cursor }).then(sync => {
+                    added = added.concat(sync.data.added);
+                    cursor = sync.data.next_cursor;
+                    hasMore = sync.data.has_more;
+                }).catch(async e => {
+                    await pool.request()
+                        .input("AccessToken", sql.VarChar, AccessToken)
+                        .query(`UPDATE UserBankTokens SET NeedsRelink = 1 WHERE AccessToken = @AccessToken`);
+                });
             }
             await pool.request()
                 .input("AccessToken", sql.VarChar, AccessToken)
@@ -410,7 +415,7 @@ const fetchStripeTransactions = async context => {
                     .input('Platform', sql.VarChar, platform)
                     .input('Category', sql.VarChar, category)
                     .query(`INSERT INTO dbo.StripeInvoices (Date, Description, Amount, Platform, Category) VALUES (@Date, @Description, @Amount, @Platform, @Category)`);
-                    totalInserted++;
+                totalInserted++;
             }
         }
         return { jsonBody: { success: true, totalInserted } };
