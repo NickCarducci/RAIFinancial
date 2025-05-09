@@ -190,8 +190,8 @@ const configuration = new Configuration({
     basePath: 'https://production.plaid.com',//PlaidEnvironments.production,
     baseOptions: {
         headers: {
-            'PLAID-CLIENT-ID': "",//process.env.PLAID_CLIENT_ID,
-            'PLAID-SECRET': "",//process.env.PLAID_SECRET,
+            'PLAID-CLIENT-ID': process.env.PLAID_CLIENT_ID,
+            'PLAID-SECRET': process.env.PLAID_SECRET,
             'Plaid-Version': '2020-09-14',
         },
     },
@@ -209,6 +209,20 @@ app.http('get_link_token', {
 
         var createTokenResponse = null;
         var error = null
+        const getError = (error) => {
+            let e = error;
+            if (error.response) {
+                e = error.response.data;                   // data, status, headers
+                if (error.response.data && error.response.data.error) {
+                    e = error.response.data.error;           // my app specific keys override
+                }
+            } else if (error.message) {
+                e = error.message;
+            } else {
+                e = "Unknown error occured";
+            }
+            return e;
+        };
         try {
             createTokenResponse = await client.linkTokenCreate(
                 {
@@ -223,7 +237,7 @@ app.http('get_link_token', {
                     redirect_uri: body.referer
                 });
         } catch (e) {
-            error = e
+            error = getError(e)
         }
 
         return {
