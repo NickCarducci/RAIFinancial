@@ -1,5 +1,7 @@
 const { app, input, output } = require('@azure/functions');
 const { Configuration, PlaidApi, Products, PlaidEnvironments, CraCheckReportProduct } = require('plaid');
+const sql = require('mssql');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const sqlInputGeneralLedger = input.sql({
     commandText: `select [TransactionID], [Date], [Description], [Amount], [Category], [Platform], [LinkedAccount], [CreatedAt] from dbo.GeneralLedger where (Date >= @StartingDate And Date <= @EndingDate)`,
@@ -236,7 +238,7 @@ app.http('get_link_token', {
                     redirect_uri: body.referer
                 });
         } catch (e) {
-            error = {...getError(e), client_id: process.env.PLAID_CLIENT_ID }
+            error = getError(e)
         }
 
         return {
@@ -302,5 +304,148 @@ app.http('updateuserbanktoken', {
             status: 201,
             jsonBody: { parameters: request.params },
         };
+    },
+});
+
+const config = {
+    user: process.env.SQL_USER,
+    password: process.env.SQL_PASSWORD,
+    server: process.env.SQL_SERVER,
+    database: process.env.SQL_DB,
+    port: 1433,
+    options: {
+        encrypt: true,
+        trustServerCertificate: false,
+    },
+};
+const fetchPlaidTransactions = async (context) => {
+    try {
+        const pool = await new sql.ConnectionPool(config)
+            .connect()
+            .then(pool => {
+                console.log("✅ Connected to Azure SQL");
+                return pool;
+            })
+            .catch(err => console.log("❌ SQL Connection Error:", err));
+        const result = await pool.request()
+            .input('UserID', sql.Int, "1")
+            .query("SELECT AccessToken, BankName FROM UserBankTokens WHERE UserID = @UserID AND (NeedsRelink = 0 OR NeedsRelink IS NULL)");
+        let totalInserted = 0;
+        for (const row of result.recordset) {
+            const { AccessToken, BankName } = row;
+            let cursor = null;
+            let hasMore = true;
+            let added = [];
+            const cursorResult = await pool.request()
+                .input("AccessToken", sql.VarChar, AccessToken)
+                .query("SELECT TOP 1 CursorValue FROM PlaidCursors WHERE AccessToken = @AccessToken ORDER BY LastUpdated DESC");
+            if (cursorResult.recordset.length > 0)
+                cursor = cursorResult.recordset[0].CursorValue;
+            while (hasMore) {
+                const sync = await client.transactionsSync({ access_token: AccessToken, cursor });
+                added = added.concat(sync.data.added);
+                cursor = sync.data.next_cursor;
+                hasMore = sync.data.has_more;
+            }
+            await pool.request()
+                .input("AccessToken", sql.VarChar, AccessToken)
+                .input("CursorValue", sql.VarChar, cursor)
+                .query("DELETE FROM PlaidCursors WHERE AccessToken = @AccessToken; INSERT INTO PlaidCursors (AccessToken, CursorValue) VALUES (@AccessToken, @CursorValue);");
+            for (const t of added) {
+                const duplicateCheck = await pool.request()
+                    .input("Date", sql.Date, t.date)
+                    .input("Description", sql.VarChar, t.name)
+                    .input("Amount", sql.Decimal(18, 2), -t.amount)
+                    .input("LinkedAccount", sql.VarChar, t.account_id)
+                    .query(`SELECT 1 FROM GeneralLedger WHERE Date = @Date AND Description = @Description AND Amount = @Amount AND LinkedAccount = @LinkedAccount`);
+                if (duplicateCheck.recordset.length === 0) {
+                    await pool.request()
+                        .input("Date", sql.Date, t.date)
+                        .input("Description", sql.VarChar, t.name)
+                        .input("Amount", sql.Decimal(18, 2), -t.amount)
+                        .input("Platform", sql.VarChar, BankName)
+                        .input("LinkedAccount", sql.VarChar, t.account_id)
+                        .query(`INSERT INTO GeneralLedger (Date, Description, Amount, Platform, LinkedAccount) VALUES (@Date, @Description, @Amount, @Platform, @LinkedAccount)`);
+                    totalInserted++;
+                }
+            }
+        }
+        return { jsonBody: { success: true, inserted: totalInserted } };
+    } catch (err) {
+        context.log(err.message);
+        return { status: 500, jsonBody: { err } };
+    }
+}
+const fetchStripeTransactions = async context => {
+    try {
+        const pool = await new sql.ConnectionPool(config)
+            .connect()
+            .then(pool => {
+                console.log("✅ Connected to Azure SQL");
+                return pool;
+            })
+            .catch(err => console.log("❌ SQL Connection Error:", err));
+        // Pull Stripe payments (use your own params if needed)
+        const charges = await stripe.charges.list({
+            limit: 100, // Max allowed by Stripe
+        });
+        let totalInserted = 0;
+        for (const charge of charges.data) {
+            const { created, description, amount, id, payment_method_details, customer } = charge;
+            const date = new Date(created * 1000);
+            const convertedAmount = amount / 100;
+            const platform = payment_method_details?.type || 'Stripe';
+            const category = customer;
+            // Check for duplicates
+            const exists = await pool.request()
+                .input('Date', sql.Date, date)
+                .input('Description', sql.VarChar, description)
+                .input('Amount', sql.Decimal(18, 2), convertedAmount)
+                .query(`SELECT 1 FROM dbo.StripeInvoices WHERE Date = @Date AND Description = @Description AND Amount = @Amount`);
+            if (exists.recordset.length === 0) {
+                await pool.request()
+                    .input('Date', sql.Date, date)
+                    .input('Description', sql.VarChar, description)
+                    .input('Amount', sql.Decimal(18, 2), convertedAmount)
+                    .input('Platform', sql.VarChar, platform)
+                    .input('Category', sql.VarChar, category)
+                    .query(`INSERT INTO dbo.StripeInvoices (Date, Description, Amount, Platform, Category) VALUES (@Date, @Description, @Amount, @Platform, @Category)`);
+                    totalInserted++;
+            }
+        }
+        return { jsonBody: { success: true, totalInserted } };
+    } catch (err) {
+        context.log("❌ Stripe sync failed:", err.message);
+        return { status: 500, jsonBody: { err } };
+    }
+}
+app.timer('unifiedTransactions', {
+    schedule: "0 59 23 */3 * *",
+    handler: async (myTimer, context) => {
+        context.log('Timer function processed request.');
+        const today = new Date();
+        const dayOfMonth = today.getDate();
+        if (dayOfMonth % 3 !== 0) {
+            context.log(`ℹ️ Skipping sync today (${dayOfMonth}) — not a 3rd day.`);
+            return null;
+        }
+        context.log(`⏳ Running unified auto-sync (Plaid + Stripe) for day ${dayOfMonth}...`);
+        // const baseUrl = process.env.FUNCTION_BASE_URL || "https://<your-function-name>.azurewebsites.net/api";
+        try {
+            const plaidRes = await fetchPlaidTransactions(context);
+            //const plaidRes = await axios.get("http://localhost:7071/api/plaid/transactions?userId=1");//change url
+            context.log("✅ Plaid sync completed:", plaidRes);
+        } catch (err) {
+            context.log("❌ Plaid sync failed:", err);
+        }
+
+        try {
+            const stripeRes = await fetchStripeTransactions(context);
+            //const stripeRes = await axios.get("http://localhost:7071/api/stripe/transactions");//change url
+            context.log("✅ Stripe sync completed:", stripeRes);
+        } catch (err) {
+            context.log("❌ Stripe sync failed:", err);
+        }
+
     },
 });
