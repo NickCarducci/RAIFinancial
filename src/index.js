@@ -227,7 +227,7 @@ app.http('get_link_token', {
                 {
                     user: {
                         // This should correspond to a unique id for the current user.
-                        client_user_id: 1,
+                        client_user_id: "1",
                     },
                     client_name: 'NuCulture',
                     products: ["transactions"],//Products.Transactions
