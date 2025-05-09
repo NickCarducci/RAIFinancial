@@ -229,7 +229,7 @@ app.http('get_link_token', {
                         // This should correspond to a unique id for the current user.
                         client_user_id: 1,
                     },
-                    client_name: 'Plaid Quickstart',
+                    client_name: 'NuCulture',
                     products: ["transactions"],//Products.Transactions
                     country_codes: ['US', 'CA'],
                     language: 'en',
