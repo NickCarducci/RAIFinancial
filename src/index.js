@@ -168,7 +168,7 @@ app.http('updatecategory', {
     },
 });
 
-const sqlInputNeedsRelinkList = input.sql({
+/*const sqlInputNeedsRelinkList = input.sql({
     commandText: 'SELECT [ID], [UserID], [BankName], [AccessToken], [ItemID], [NeedsRelink] FROM dbo.UserBankTokens WHERE UserID = 1 AND NeedsRelink = 1',
     commandType: 'Text',
     connectionStringSetting: "SqlConnectionString"
@@ -186,7 +186,7 @@ app.http('needsrelinklist', {
             jsonBody: { needsRelinkList },
         };
     },
-});
+});*/
 
 const configuration = new Configuration({
     basePath: 'https://production.plaid.com',//PlaidEnvironments.production,
@@ -282,7 +282,7 @@ app.http('userbanktokens', {
         context.log('HTTP trigger and SQL input binding function processed a request.');
         const userBankTokens = context.extraInputs.get(sqlInputUserBankTokens);
         return {
-            jsonBody: userBankTokens,
+            jsonBody: { userBankTokens },
         };
     },
 });
