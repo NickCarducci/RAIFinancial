@@ -73,7 +73,7 @@ app.http('accountbalances', {
 });
 
 const sqlInputIOStatement = input.sql({
-    commandText: 'SELECT [Month], [TotalRevenue], [TotalExpenses], [NetProfit] FROM dbo.IOStatement',
+    commandText: 'SELECT [Month], [Revenue], [Expenses], [NetProfit] FROM dbo.IOStatement',
     commandType: 'Text',
     connectionStringSetting: "SqlConnectionString"
 });//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
@@ -166,8 +166,28 @@ app.http('updatecategory', {
     },
 });
 
+const sqlInputNeedsRelinkList = input.sql({
+    commandText: 'SELECT [ID], [UserID], [BankName], [AccessToken], [ItemID], [NeedsRelink] FROM dbo.UserBankTokens WHERE UserID = 1 AND NeedsRelink = 1',
+    commandType: 'Text',
+    connectionStringSetting: "SqlConnectionString"
+});//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
+
+app.http('needsrelinklist', {
+    route: "needsrelinklist",
+    methods: ['GET'],
+    authLevel: 'anonymous',
+    extraInputs: [sqlInputNeedsRelinkList],
+    handler: (request, context) => {
+        context.log('HTTP trigger and SQL input binding function processed a request.');
+        const needsRelinkList = context.extraInputs.get(sqlInputNeedsRelinkList);
+        return {
+            jsonBody: { needsRelinkList },
+        };
+    },
+});
+
 const configuration = new Configuration({
-    basePath: PlaidEnvironments.production,
+    basePath: 'https://production.plaid.com',//PlaidEnvironments.production,
     baseOptions: {
         headers: {
             'PLAID-CLIENT-ID': process.env.PLAID_CLIENT_ID,
@@ -181,27 +201,34 @@ const client = new PlaidApi(configuration);
 
 app.http('get_link_token', {
     route: "get_link_token",
-    methods: ['GET'],
+    methods: ['POST'],
     authLevel: 'anonymous',
     handler: async (request, context) => {
-        //const body = await request.json();
+        const body = await request.json();
         context.log('HTTP trigger and SQL input binding function processed a request.');
 
-        const createTokenResponse = await client.linkTokenCreate(
-            {
-              user: {
-                // This should correspond to a unique id for the current user.
-                client_user_id: 1,
-              },
-              client_name: 'Plaid Quickstart',
-              products: [Products.Transactions],
-              country_codes: ['US'],
-              language: 'en',
-            });
+        var createTokenResponse = null;
+        var error = null
+        try {
+            createTokenResponse = await client.linkTokenCreate(
+                {
+                    user: {
+                        // This should correspond to a unique id for the current user.
+                        client_user_id: 1,
+                    },
+                    client_name: 'Plaid Quickstart',
+                    products: ["transactions"],//Products.Transactions
+                    country_codes: ['US', 'CA'],
+                    language: 'en',
+                    redirect_uri: body.referer
+                });
+        } catch (e) {
+            error = e
+        }
 
         return {
             status: 201,
-            jsonBody: createTokenResponse.data,
+            jsonBody: error ? error : createTokenResponse.data,
         };
     },
 });
