@@ -200,6 +200,20 @@ const configuration = new Configuration({
 
 const client = new PlaidApi(configuration);
 
+const getError = (error) => {
+    let e = error;
+    if (error.response) {
+        e = error.response.data;                   // data, status, headers
+        if (error.response.data && error.response.data.error) {
+            e = error.response.data.error;           // my app specific keys override
+        }
+    } else if (error.message) {
+        e = error.message;
+    } else {
+        e = "Unknown error occured";
+    }
+    return e;
+};
 app.http('get_link_token', {
     route: "get_link_token",
     methods: ['POST'],
@@ -210,20 +224,6 @@ app.http('get_link_token', {
 
         var createTokenResponse = null;
         var error = null
-        const getError = (error) => {
-            let e = error;
-            if (error.response) {
-                e = error.response.data;                   // data, status, headers
-                if (error.response.data && error.response.data.error) {
-                    e = error.response.data.error;           // my app specific keys override
-                }
-            } else if (error.message) {
-                e = error.message;
-            } else {
-                e = "Unknown error occured";
-            }
-            return e;
-        };
         try {
             createTokenResponse = await client.linkTokenCreate(
                 {
@@ -317,6 +317,7 @@ const config = {
         encrypt: true,
         trustServerCertificate: false,
     },
+    requestTimeout: 60000
 };
 const fetchPlaidTransactions = async (context) => {
     try {
@@ -378,7 +379,7 @@ const fetchPlaidTransactions = async (context) => {
         return { jsonBody: { success: true, inserted: totalInserted } };
     } catch (err) {
         context.log(err.message);
-        return { status: 500, jsonBody: { err } };
+        return { status: 500, jsonBody: { err: getError(err) } };
     }
 }
 const fetchStripeTransactions = async context => {
@@ -421,7 +422,7 @@ const fetchStripeTransactions = async context => {
         return { jsonBody: { success: true, totalInserted } };
     } catch (err) {
         context.log("❌ Stripe sync failed:", err.message);
-        return { status: 500, jsonBody: { err } };
+        return { status: 500, jsonBody: { err: getError(err) } };
     }
 }
 app.timer('unifiedTransactions', {
@@ -441,7 +442,7 @@ app.timer('unifiedTransactions', {
             //const plaidRes = await axios.get("http://localhost:7071/api/plaid/transactions?userId=1");//change url
             context.log("✅ Plaid sync completed:", plaidRes);
         } catch (err) {
-            context.log("❌ Plaid sync failed:", err);
+            context.log("❌ Plaid sync failed:", getError(err));
         }
 
         try {
@@ -449,7 +450,7 @@ app.timer('unifiedTransactions', {
             //const stripeRes = await axios.get("http://localhost:7071/api/stripe/transactions");//change url
             context.log("✅ Stripe sync completed:", stripeRes);
         } catch (err) {
-            context.log("❌ Stripe sync failed:", err);
+            context.log("❌ Stripe sync failed:", getError(err));
         }
 
     },
