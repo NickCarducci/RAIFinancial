@@ -425,7 +425,7 @@ const fetchStripeTransactions = async context => {
     }
 }
 app.timer('unifiedTransactions', {
-    schedule: "0 */10 * * * *",//0 59 23 */3 * *
+    schedule: "0 59 23 */3 * *",//0 59 23 */3 * *//0 */10 * * * *
     handler: async (myTimer, context) => {
         context.log('Timer function processed request.');
         const today = new Date();
