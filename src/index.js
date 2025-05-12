@@ -317,7 +317,7 @@ const config = {
         encrypt: true,
         trustServerCertificate: false,
     },
-    requestTimeout: 60000
+    requestTimeout: 120000
 };
 const fetchPlaidTransactions = async (context) => {
     try {
