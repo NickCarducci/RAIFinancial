@@ -203,10 +203,10 @@ const client = new PlaidApi(configuration);
 const getError = (error) => {
     let e = error;
     if (error.response) {
-        e = error.response//.data;                   // data, status, headers
-        /*if (error.response.data && error.response.data.error) {
+        e = error.response.data;                   // data, status, headers
+        if (error.response.data && error.response.data.error) {
             e = error.response.data.error;           // my app specific keys override
-        }*/
+        }
     } else if (error.message) {
         e = error.message;
     } else {
@@ -317,7 +317,7 @@ const config = {
         encrypt: true,
         trustServerCertificate: false,
     },
-    requestTimeout: 120000
+    requestTimeout: 240000
 };
 const fetchPlaidTransactions = async (context) => {
     try {
@@ -343,7 +343,7 @@ const fetchPlaidTransactions = async (context) => {
             if (cursorResult.recordset.length > 0)
                 cursor = cursorResult.recordset[0].CursorValue;
             while (hasMore) {
-                await client.transactionsSync({ access_token: AccessToken, cursor }).then(sync => {
+                await client.transactionsSync({ access_token: AccessToken, cursor, options: { days_requested: 30 } }).then(sync => {
                     added = added.concat(sync.data.added);
                     cursor = sync.data.next_cursor;
                     hasMore = sync.data.has_more;
