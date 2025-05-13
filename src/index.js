@@ -414,7 +414,7 @@ const fetchStripeTransactions = async context => {
                     .input('Amount', sql.Decimal(18, 2), convertedAmount)
                     .input('CustomerEmail', sql.VarChar, customerEmail)
                     .input('Category', sql.VarChar, category)
-                    .query(`INSERT INTO dbo.StripeInvoices (Date, Amount, Category, CustomerEmail) VALUES (@Date, @Description, @Amount, @Platform, @Category, @CustomerEmail)`);
+                    .query(`INSERT INTO dbo.StripeInvoices (Date, Amount, Category, CustomerEmail) VALUES (@Date, @Amount, @Category, @CustomerEmail)`);
                 totalInserted++;
             }
         }
