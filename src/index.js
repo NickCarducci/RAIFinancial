@@ -456,7 +456,7 @@ app.timer('unifiedTransactions', {
 });
 
 const sqlInputStripeInvoices = input.sql({
-    commandText: 'SELECT [InvoiceID], [Date], [Description], [Amount], [Platform], [Category], [CreatedAt] FROM dbo.StripeInvoices',
+    commandText: 'SELECT [InvoiceID], [Date], [Amount], [Category], [CreatedAt] FROM dbo.StripeInvoices',
     commandType: 'Text',
     connectionStringSetting: "SqlConnectionString"
 });//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
