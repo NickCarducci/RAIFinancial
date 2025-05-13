@@ -426,7 +426,7 @@ const fetchStripeTransactions = async context => {
     }
 }
 app.timer('unifiedTransactions', {
-    schedule: "0 59 23 */3 * *",//0 */10 * * * *
+    schedule: "0 */5 * * * *",//0 59 23 */3 * *
     handler: async (myTimer, context) => {
         context.log('Timer function processed request.');
         const today = new Date();
@@ -453,5 +453,25 @@ app.timer('unifiedTransactions', {
             context.log("❌ Stripe sync failed:", getError(err));
         }
 
+    },
+});
+
+const sqlInputStripeInvoices = input.sql({
+    commandText: 'SELECT [InvoiceID], [Date], [Description], [Amount], [Platform], [Category], [CreatedAt] FROM dbo.StripeInvoices',
+    commandType: 'Text',
+    connectionStringSetting: "SqlConnectionString"
+});//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
+
+app.http('invoices', {
+    route: "invoices",
+    methods: ['GET'],
+    authLevel: 'anonymous',
+    extraInputs: [sqlInputStripeInvoices],
+    handler: (request, context) => {
+        context.log('HTTP trigger and SQL input binding function processed a request.');
+        const invoices = context.extraInputs.get(sqlInputStripeInvoices);
+        return {
+            jsonBody: { invoices },
+        };
     },
 });
