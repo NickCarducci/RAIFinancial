@@ -394,28 +394,28 @@ const fetchStripeTransactions = async context => {
         // Pull Stripe payments (use your own params if needed)
         const charges = await stripe.charges.list({
             limit: 100, // Max allowed by Stripe
+            expand: ['data.customer']
         });
         let totalInserted = 0;
         for (const charge of charges.data) {
-            const { created, description, amount, id, payment_method_details, customer } = charge;
+            const { created, amount, customer } = charge;
             const date = new Date(created * 1000);
             const convertedAmount = amount / 100;
-            const platform = payment_method_details?.type || 'Stripe';
-            const category = customer;
+            const category = customer?.id|| null;
+
+const customerEmail = customer?.email || null;
             // Check for duplicates
             const exists = await pool.request()
                 .input('Date', sql.Date, date)
-                .input('Description', sql.VarChar, description)
                 .input('Amount', sql.Decimal(18, 2), convertedAmount)
-                .query(`SELECT 1 FROM dbo.StripeInvoices WHERE Date = @Date AND Description = @Description AND Amount = @Amount`);
+                .query(`SELECT 1 FROM dbo.StripeInvoices WHERE Date = @Date AND Amount = @Amount`);
             if (exists.recordset.length === 0) {
                 await pool.request()
                     .input('Date', sql.Date, date)
-                    .input('Description', sql.VarChar, description)
                     .input('Amount', sql.Decimal(18, 2), convertedAmount)
-                    .input('Platform', sql.VarChar, platform)
+                    .input('CustomerEmail', sql.VarChar, customerEmail)
                     .input('Category', sql.VarChar, category)
-                    .query(`INSERT INTO dbo.StripeInvoices (Date, Description, Amount, Platform, Category) VALUES (@Date, @Description, @Amount, @Platform, @Category)`);
+                    .query(`INSERT INTO dbo.StripeInvoices (Date, Amount, Category, CustomerEmail) VALUES (@Date, @Description, @Amount, @Platform, @Category, @CustomerEmail)`);
                 totalInserted++;
             }
         }
