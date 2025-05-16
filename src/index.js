@@ -474,3 +474,24 @@ app.http('invoices', {
         };
     },
 });
+
+const sqlOutputCategoryUpdateInvoices = output.sql({
+    //type: 'sql',
+    commandText: `dbo.StripeInvoices`,
+    connectionStringSetting: "SqlConnectionString"
+});//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
+app.http('updatecategoryinvoices', {
+    route: "updatecategoryinvoices",
+    methods: ['POST'],
+    authLevel: 'anonymous',
+    extraOutputs: [sqlOutputCategoryUpdateInvoices],
+    handler: async (request, context) => {
+        const body = await request.json();
+        context.log('HTTP trigger and SQL input binding function processed a request.');
+        context.extraOutputs.set(sqlOutputCategoryUpdateInvoices, body);
+        return {
+            status: 201,
+            jsonBody: { parameters: request.params },
+        };
+    },
+});
