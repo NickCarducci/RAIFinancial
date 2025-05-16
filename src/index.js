@@ -425,15 +425,15 @@ const fetchStripeTransactions = async context => {
     }
 }
 app.timer('unifiedTransactions', {
-    schedule: "0 */5 * * * *",//0 59 23 */3 * *
+    schedule: "0 59 23 */3 * *",//0 */5 * * * *
     handler: async (myTimer, context) => {
         context.log('Timer function processed request.');
         const today = new Date();
         const dayOfMonth = today.getDate();
-        /*if (dayOfMonth % 3 !== 0) {
+        if (dayOfMonth % 3 !== 0) {
             context.log(`ℹ️ Skipping sync today (${dayOfMonth}) — not a 3rd day.`);
             return null;
-        }*/
+        }
         context.log(`⏳ Running unified auto-sync (Plaid + Stripe) for day ${dayOfMonth}...`);
         // const baseUrl = process.env.FUNCTION_BASE_URL || "https://<your-function-name>.azurewebsites.net/api";
         try {
