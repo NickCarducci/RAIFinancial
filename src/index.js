@@ -41,8 +41,8 @@ const sqlInputGeneralLedgerSearch = input.sql({
     connectionStringSetting: "SqlConnectionString"
 });//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
 
-app.http('generalledger', {
-    route: "generalledger/{newSearchQuery}",
+app.http('generalledgersearch', {
+    route: "generalledgersearch/{newSearchQuery}",
     methods: ['GET'],
     authLevel: 'anonymous',
     extraInputs: [sqlInputGeneralLedgerSearch],
