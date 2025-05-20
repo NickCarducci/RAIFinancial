@@ -47,7 +47,7 @@ app.http('generalledgersearch', {
     authLevel: 'anonymous',
     extraInputs: [sqlInputGeneralLedgerSearch],
     handler: (request, context) => {
-        context.log('HTTP trigger and SQL input binding function processed a request.');
+        context.log('HTTP trigger and SQL input binding function processed a request.' + JSON.stringify(request));
         const generalLedger = context.extraInputs.get(sqlInputGeneralLedgerSearch);
         /*context.res = {
             status: 200,
