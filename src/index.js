@@ -34,6 +34,37 @@ app.http('generalledger', {
     },
 });
 
+const sqlInputGeneralLedgerSearch = input.sql({
+    commandText: `select [TransactionID], [Date], [Description], [Amount], [Category], [Platform], [LinkedAccount], [CreatedAt] from dbo.GeneralLedger where Description like '%@NewSearchQuery%'`,
+    commandType: 'Text',
+    parameters: '@NewSearchQuery={newSearchQuery:nvarchar}',
+    connectionStringSetting: "SqlConnectionString"
+});//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
+
+app.http('generalledger', {
+    route: "generalledger/{newSearchQuery}",
+    methods: ['GET'],
+    authLevel: 'anonymous',
+    extraInputs: [sqlInputGeneralLedgerSearch],
+    handler: (request, context) => {
+        context.log('HTTP trigger and SQL input binding function processed a request.');
+        const generalLedger = context.extraInputs.get(sqlInputGeneralLedgerSearch);
+        /*context.res = {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json'
+            }, 
+            body: {
+                success: true,
+                generalLedger: {}
+            }
+        };*/
+        return {
+            jsonBody: { generalLedger },
+        };
+    },
+});
+
 const sqlInputPayoutLog = input.sql({
     commandText: 'select [PayoutID], [EmployeeName], [AmountPaid], [PaymentDate], [CreatedAt] from dbo.PayoutLog',
     commandType: 'Text',
