@@ -35,7 +35,7 @@ app.http('generalledger', {
 });
 
 const sqlInputGeneralLedgerSearch = input.sql({
-    commandText: `select [TransactionID], [Date], [Description], [Amount], [Category], [Platform], [LinkedAccount], [CreatedAt] from dbo.GeneralLedger where Description like '%@NewSearchQuery%'`,
+    commandText: `select [TransactionID], [Date], [Description], [Amount], [Category], [Platform], [LinkedAccount], [CreatedAt] from dbo.GeneralLedger where Description like Concat(Char(37), '@NewSearchQuery', Char(37))`,
     commandType: 'Text',
     parameters: '@NewSearchQuery={newSearchQuery:nvarchar}',
     connectionStringSetting: "SqlConnectionString"
