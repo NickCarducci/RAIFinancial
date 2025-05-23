@@ -65,6 +65,37 @@ app.http('generalledgersearch', {
     },
 });
 
+const sqlInputGeneralLedgerFilter = input.sql({
+    commandText: `select [TransactionID], [Date], [Description], [Amount], [Category], [Platform], [LinkedAccount], [CreatedAt] from dbo.GeneralLedger where Category like Concat(Char(37), @ExpenseFilter, Char(37))`,
+    commandType: 'Text',
+    parameters: '@ExpenseFilter={expenseFilter:nvarchar}',
+    connectionStringSetting: "SqlConnectionString"
+});//`Driver={ODBC Driver 18 for SQL Server};Server=tcp:raiautomay.database.windows.net,1433;Database=RAIFinance;Uid=dumbcult;Pwd=${process.env.PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;`,
+
+app.http('generalledgerfilter', {
+    route: "generalledgerfilter/{expenseFilter}",
+    methods: ['GET'],
+    authLevel: 'anonymous',
+    extraInputs: [sqlInputGeneralLedgerFilter],
+    handler: (request, context) => {
+        context.log('HTTP trigger and SQL input binding function processed a request.' + JSON.stringify(request));
+        const generalLedger = context.extraInputs.get(sqlInputGeneralLedgerFilter);
+        /*context.res = {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json'
+            }, 
+            body: {
+                success: true,
+                generalLedger: {}
+            }
+        };*/
+        return {
+            jsonBody: { generalLedger },
+        };
+    },
+});
+
 const sqlInputPayoutLog = input.sql({
     commandText: 'select [PayoutID], [EmployeeName], [AmountPaid], [PaymentDate], [CreatedAt] from dbo.PayoutLog',
     commandType: 'Text',
